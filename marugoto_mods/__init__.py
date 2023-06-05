@@ -33,3 +33,4 @@ from marugoto.mil._mil import train, deploy
 from marugoto.mil.data import get_cohort_df, get_target_enc, make_dataset
 from marugoto.data import SKLearnEncoder
 from marugoto.mil.model import MILModel
+from marugoto.mil.helpers import _make_cat_enc, _make_cont_enc
