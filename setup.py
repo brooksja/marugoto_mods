@@ -1,7 +1,5 @@
 from setuptools import setup,find_packages
 
-from my_pip_package import __version__
-
 setup(
     name='marugoto_mods',
     version=__version__,
