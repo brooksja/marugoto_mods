@@ -2,7 +2,7 @@ from setuptools import setup,find_packages
 
 setup(
     name='marugoto_mods',
-    version=__version__,
+    #version=__version__,
 
     url='https://github.com/brooksja/marugoto_mods.git',
     author='James Brooks',
