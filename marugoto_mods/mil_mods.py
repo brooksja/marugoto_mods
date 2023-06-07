@@ -166,7 +166,7 @@ def train_categorical_model_(
         valid_idxs=df.PATIENT.isin(valid_patients).values,
         path=output_path,
         lr=lr,
-        n_epoch=n_epochs
+        n_epoch=n_epoch
     )
 
     # save some additional information to the learner to make deployment easier
