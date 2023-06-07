@@ -64,7 +64,7 @@ def train(
 
     return learn
   
-  def train_categorical_model_(
+def train_categorical_model_(
     clini_table: Path,
     slide_csv: Path,
     feature_dir: Path,
