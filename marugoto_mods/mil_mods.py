@@ -71,7 +71,7 @@ def train(
 
     # build dataloaders
     train_dl = DataLoader(
-        train_ds, batch_size=64, shuffle=True, num_workers=1, drop_last=False
+        train_ds, batch_size=64, shuffle=True, num_workers=1, drop_last=True
     )
     valid_dl = DataLoader(
         valid_ds, batch_size=1, shuffle=False, num_workers=os.cpu_count()
