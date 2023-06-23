@@ -69,17 +69,6 @@ def train(
         bag_size=None,
     )
 
-    # build dataloaders
-    train_dl = DataLoader(
-        train_ds, batch_size=64 if len(train_ds)>64 else 1, shuffle=True, num_workers=1, drop_last=True
-    )
-    valid_dl = DataLoader(
-        valid_ds, batch_size=1, shuffle=False, num_workers=os.cpu_count()
-    )
-    batch = train_dl.one_batch()
-
-    model = MILModel(batch[0].shape[-1], batch[-1].shape[-1])
-
     # weigh inversely to class occurances
     counts = pd.value_counts(targs[~valid_idxs])
     weight = counts.sum() / counts
@@ -88,7 +77,21 @@ def train(
     weight = torch.tensor(
         list(map(weight.get, target_enc.categories_[0])), dtype=torch.float32
     )
-    loss_func = nn.CrossEntropyLoss(weight=weight)
+    sampler = torch.utils.data.WeightedRandomSampler(weight, 64, replacement=True)
+    
+    # build dataloaders
+    train_dl = DataLoader(
+        train_ds,batch_sampler=sampler# batch_size=64 if len(train_ds)>64 else 1, shuffle=True, num_workers=1, drop_last=True
+    )
+    valid_dl = DataLoader(
+        valid_ds, batch_size=1, shuffle=False, num_workers=os.cpu_count()
+    )
+    batch = train_dl.one_batch()
+
+    model = MILModel(batch[0].shape[-1], batch[-1].shape[-1])
+
+    
+    loss_func = nn.CrossEntropyLoss()#weight=weight)
 
     dls = DataLoaders(train_dl, valid_dl)
     learn = Learner(dls, model, loss_func=loss_func, metrics=[RocAuc()], path=path)
