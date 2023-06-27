@@ -31,14 +31,14 @@ def _top_att_tiles_df(
     # if ~isinstance(feature_dir, list):
     #    feature_dir = [feature_dir]
 
-    df = mil.data.get_cohort_df(
+    df,_ = mil.data.get_cohort_df(
         clini_table=patient_preds_csv,
         slide_table=slide_csv,
         feature_dir=feature_dir,
         target_label=target_label,
         categories=None,
     )
-    df = df[df[target_label] == pos_class]
+    
     encoder = learn.encoder.eval()
     attention = learn.attention.eval()
     head = learn.head.eval()
