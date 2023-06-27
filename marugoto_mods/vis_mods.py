@@ -51,6 +51,7 @@ def _top_att_tiles_df(
     # i_patients = np.repeat([np.arange(n_tiles)],n_patients,axis=0)
     i_patients = np.arange(n_patients)
     iter_df = df[df[target_label] == pos_class].copy()
+    iter_df["loss"] = pd.to_numeric(iter_df["loss"])
     # Filter for patients with more than 50 slides only
     for i_patient, slide_paths in zip(
         i_patients, iter_df.nsmallest(n_patients, "loss")["slide_path"].values
