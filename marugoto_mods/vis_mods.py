@@ -81,7 +81,7 @@ def _top_att_tiles_df(
         top_idxs = patient_weighted_scores.topk(n // 5).indices[:: n // 10 // n_tiles][
             :n_tiles
         ]
-        top_slides = np.repeat(slide_path, sizes)[top_idxs]
+        top_slides = np.repeat(slide_paths, sizes)[top_idxs]
         top_scores = patient_scores[top_idxs]
         top_atts = patient_atts[top_idxs]
 
