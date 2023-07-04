@@ -155,7 +155,7 @@ gdown.download_folder(url=url,output=destination,quiet=True)
 
 if (p := "./RetCCL") not in sys.path:
     sys.path = [p] + sys.path
-import ResNet
+from RetCCL import ResNet
 
 import torch.nn as nn
 import torch
