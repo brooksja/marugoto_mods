@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
     # load base fully convolutional model (w/o pooling / flattening or head)
     # In this case we're loading the xiyue wang RetCLL model, change this bit for other networks
-    import ResNet
+    from RetCCL import ResNet
 
     base_model = ResNet.resnet50(
         num_classes=128, mlp=False, two_branch=False, normlinear=True
