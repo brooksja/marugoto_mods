@@ -174,6 +174,35 @@ import cv2
 PIL.Image.MAX_IMAGE_PIXELS = None
 
 
+def canny_detector(tile):
+    # canny detection from KatherLab/preprocessing-ng
+
+    tile_grey = np.array(tile.convert('L'))
+    # hardcoded  thresholds from preprocessing-ng
+    edge = cv2.Canny(tile_grey,40,100)
+
+    # avoid dividing by zero
+    edge = (edge / np.max(edge) if np.max(edge) != 0 else 0)
+    edge = (((np.sum(np.sum(edge)) / (tile_grey.shape[0]*tile_grey.shape[1])) * 100)
+            if (tile_grey.shape[0]*tile_grey.shape[1]) != 0 else 0)
+
+    # hardcoded limit. Less or equal to 2 edges will be rejected (i.e., not saved)
+    if(edge <= 2):
+        new = np.ones_like(np.array(tile),dtype=np.uint8)*250
+        return PIL.Image.fromarray(new)
+    else:
+        return tile
+
+
+from urllib.parse import ParseResult
+
+def get_wsi(url: ParseResult, *, cache_dir: Path) -> Path:
+    if not url.scheme:  # local file
+        return Path(url.path)
+    else:
+        raise RuntimeError(f"unsupported scheme: {url.scheme}")
+
+
 def _load_tile(
     slide: openslide.OpenSlide,
     pos: Tuple[int, int],
@@ -192,7 +221,7 @@ def load_slide(slide: openslide.OpenSlide, target_mpp: float = 256 / 224) -> np.
     #  1. parallelize the loading process
     #  2. not use too much data when then scaling down the tiles from their
     #     initial size
-    steps = 8
+    steps = 10
     stride = np.ceil(np.array(slide.dimensions) / steps).astype(int)
     slide_mpp = float(slide.properties[openslide.PROPERTY_NAME_MPP_X])
     tile_target_size = np.round(stride * slide_mpp / target_mpp).astype(int)
@@ -454,33 +483,3 @@ if __name__ == "__main__":
         x = slide_im.copy().convert("RGBA")
         x.paste(map_im, mask=map_im)
         x.convert("RGB").save(slide_outdir / "map_overlayed.jpg")
-
-
-def canny_detector(tile):
-    # canny detection from KatherLab/preprocessing-ng
-
-    tile_grey = np.array(tile.convert('L'))
-    # hardcoded  thresholds from preprocessing-ng
-    edge = cv2.Canny(tile_grey,40,100)
-
-    # avoid dividing by zero
-    edge = (edge / np.max(edge) if np.max(edge) != 0 else 0)
-    edge = (((np.sum(np.sum(edge)) / (tile_grey.shape[0]*tile_grey.shape[1])) * 100)
-            if (tile_grey.shape[0]*tile_grey.shape[1]) != 0 else 0)
-
-    # hardcoded limit. Less or equal to 2 edges will be rejected (i.e., not saved)
-    if(edge < 2.):
-        tile = np.array(tile).fill(250)
-        return PIL.Image.fromarray(tile)
-    else:
-        return tile
-
-
-
-from urllib.parse import ParseResult
-
-def get_wsi(url: ParseResult, *, cache_dir: Path) -> Path:
-    if not url.scheme:  # local file
-        return Path(url.path)
-    else:
-        raise RuntimeError(f"unsupported scheme: {url.scheme}")
