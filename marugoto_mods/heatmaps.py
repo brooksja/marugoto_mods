@@ -186,8 +186,8 @@ def canny_detector(tile):
     edge = (((np.sum(np.sum(edge)) / (tile_grey.shape[0]*tile_grey.shape[1])) * 100)
             if (tile_grey.shape[0]*tile_grey.shape[1]) != 0 else 0)
 
-    # hardcoded limit. Less or equal to 2 edges will be rejected (i.e., not saved)
-    if(edge <= 2):
+    # hardcoded limit. Less or equal to 5 edges will be rejected (i.e., not saved)
+    if(edge <= 5):
         new = np.ones_like(np.array(tile),dtype=np.uint8)*250
         return PIL.Image.fromarray(new)
     else:
@@ -221,7 +221,7 @@ def load_slide(slide: openslide.OpenSlide, target_mpp: float = 256 / 224) -> np.
     #  1. parallelize the loading process
     #  2. not use too much data when then scaling down the tiles from their
     #     initial size
-    steps = 10
+    steps = 16
     stride = np.ceil(np.array(slide.dimensions) / steps).astype(int)
     slide_mpp = float(slide.properties[openslide.PROPERTY_NAME_MPP_X])
     tile_target_size = np.round(stride * slide_mpp / target_mpp).astype(int)
