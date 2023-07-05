@@ -155,7 +155,7 @@ gdown.download_folder(url=url,output=destination,quiet=True)
 
 if (p := "./RetCCL") not in sys.path:
     sys.path = [p] + sys.path
-from RetCCL import ResNet
+from .RetCCL import ResNet
 
 import torch.nn as nn
 import torch
@@ -267,7 +267,7 @@ if __name__ == "__main__":
 
     # load base fully convolutional model (w/o pooling / flattening or head)
     # In this case we're loading the xiyue wang RetCLL model, change this bit for other networks
-    from RetCCL import ResNet
+    from .RetCCL import ResNet
 
     base_model = ResNet.resnet50(
         num_classes=128, mlp=False, two_branch=False, normlinear=True
