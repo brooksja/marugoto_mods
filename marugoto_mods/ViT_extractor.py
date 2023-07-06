@@ -45,7 +45,7 @@ def extract_ViT_features_(slide_tile_paths, **kwargs):
             dataset with augmentation should be performed.  0 means that
             only one, non-augmentation iteration will be done.
     """
-    model = vit.vit_b_16(weights=vit.ViT_B_16_Weights.IMAGENET1K_V1,pretrained=True)
+    model = vit.vit_b_16(weights=vit.ViT_B_16_Weights.IMAGENET1K_V1,progress=False)
     model.heads['head'] = torch.nn.Identity()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.eval().to(device)
