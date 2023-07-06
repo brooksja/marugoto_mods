@@ -26,7 +26,6 @@ if __name__ == "__main__":
         help="Also save augmented feature vectors.",
     )
     args = parser.parse_args()
-    print(f"{args=}")
 
 import torchvision.models.vision_transformer as vit
 import torch
@@ -46,7 +45,7 @@ def extract_ViT_features_(slide_tile_paths, **kwargs):
             only one, non-augmentation iteration will be done.
     """
     model = vit.vit_b_16(weights=vit.ViT_B_16_Weights.IMAGENET1K_V1,progress=False)
-    model.heads['head'] = torch.nn.Identity()
+    model.heads.head = torch.nn.Identity()
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.eval().to(device)
 
