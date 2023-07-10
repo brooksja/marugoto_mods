@@ -36,7 +36,6 @@ from concurrent import futures
 from tqdm import tqdm
 from PIL import Image
 from typing import Tuple
-from common import supported_extensions
 import logging
 import cv2
 from artefact_detector.deploy import run_artefact_detector
@@ -55,6 +54,8 @@ def main(
         um_per_tile:  Size each tile spans in µm.
         force:  Overwrite existing tiles.
     """
+    supported_extensions = {'svs', 'tif', 'vms', 'vmu', 'ndpi', 'scn', 'mrxs', 'tiff', 'svslide', 'bif'}
+    
     outdir.mkdir(exist_ok=True, parents=True)
     logging.basicConfig(filename=outdir/'logfile', level=logging.DEBUG)
     logging.getLogger().addHandler(logging.StreamHandler())
