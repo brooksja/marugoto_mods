@@ -177,7 +177,7 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
                 f'Tile rejected, found 2 or less edges. Tile: {outpath}')
             return
         # here is new bit, need to convert from PIL (RGB) to CV2 (BGR)
-        if run_artefact_detector(cv2.cvtColor(np.array(tile), cv2.COLOR_RGB2BGR)) == -1:
+        if run_artefact_detector(cv2.cvtColor(np.array(tile), cv2.COLOR_RGBA2BGR)) == -1:
             logging.info(
                 f'Tile rejected by artefact detector. Tile: {outpath}')
             return
