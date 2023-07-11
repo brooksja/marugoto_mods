@@ -55,6 +55,12 @@ def main(
         force:  Overwrite existing tiles.
     """
     supported_extensions = {'svs', 'tif', 'vms', 'vmu', 'ndpi', 'scn', 'mrxs', 'tiff', 'svslide', 'bif'}
+
+    # load artefact_detector
+    art_det = Artefact_detector()
+    weights = art_det.load_default_weights()
+    art_det = Artefact_detector.load_from_checkpoint(weights)
+    art_det.eval().cpu()
     
     outdir.mkdir(exist_ok=True, parents=True)
     logging.basicConfig(filename=outdir/'logfile', level=logging.DEBUG)
@@ -81,7 +87,8 @@ def main(
                 um_per_tile=um_per_tile,
                 threshold=brightness_cutoff,
                 force=force,
-                canny=use_canny)
+                canny=use_canny,
+                artefact_detector=art_det)
             submitted_jobs[future] = tmp_slide_path     # to delete later
 
             while len(submitted_jobs) > 2 or (submitted_jobs and i == len(slides) - 1):
@@ -101,7 +108,7 @@ def extract_tiles(
         *,
         slide_path: Path, outdir: Path,
         tile_size: int, um_per_tile: float,
-        threshold: int, force: bool, canny: bool
+        threshold: int, force: bool, canny: bool, artfeact_detector
 ) -> None:
     slide = OpenSlide(str(slide_path))
 
@@ -125,7 +132,7 @@ def extract_tiles(
                 read_and_save_tile,
                 slide=slide, outpath=fn, coords=c,
                 tile_size_px=tile_size_px, tile_size_out=tile_size,
-                use_canny=canny)
+                use_canny=canny, artefact_detector=artefact_detector)
             jobs.append(future)
 
         for future in tqdm(futures.as_completed(jobs), total=len(jobs), leave=False):
@@ -148,7 +155,7 @@ def get_mask_from_thumb(thumb, threshold: int) -> np.ndarray:
     return np.array(thumb) < threshold
 
 
-def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, use_canny):
+def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, use_canny, artefact_detector):
     tile = slide.read_region(coords, 0, (int(tile_size_px),)*2)
 
     # True by default, which runs Canny edge detection & artefact detector
@@ -178,13 +185,10 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
             return
         
         # here is new bit
-        art_det = Artefact_detector()
-        weights = art_det.load_default_weights()
-        art_det = Artefact_detector.load_from_checkpoint(weights)
-        art_det.eval().cpu()
-        transform = art_det.default_transforms()
+        
+        transform = artefact_detector.default_transforms()
         tformd_tile = transform(tile.convert('RGB')).unsqueeze(0)
-        if art_det.model(tformd_tile).detach().squeeze().numpy() < 0.5:
+        if artefact_detector.model(tformd_tile).detach().squeeze().numpy() < 0.5:
             logging.info(
                 f'Tile rejected by artefact detector. Tile: {outpath}')
             return
