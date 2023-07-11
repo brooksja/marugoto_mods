@@ -178,7 +178,8 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
             return
         
         # here is new bit
-        weights = Artefact_detector.load_default_weights()
+        art_det = Artefact_detector()
+        weights = art_det.load_default_weights()
         art_det = Artefact_detector.load_from_checkpoint(weights)
         art_det.eval.cpu()
         transform = art_det.default_transforms()
