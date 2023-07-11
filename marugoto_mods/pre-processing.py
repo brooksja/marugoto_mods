@@ -108,7 +108,7 @@ def extract_tiles(
         *,
         slide_path: Path, outdir: Path,
         tile_size: int, um_per_tile: float,
-        threshold: int, force: bool, canny: bool, artfeact_detector
+        threshold: int, force: bool, canny: bool, artefact_detector
 ) -> None:
     slide = OpenSlide(str(slide_path))
 
