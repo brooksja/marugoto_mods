@@ -38,7 +38,7 @@ from PIL import Image
 from typing import Tuple
 import logging
 import cv2
-from artefact_detector.deploy import run_artefact_detector
+from artefact_detector.model import Artefact_detector
 
 def main(
         cohort_path: Path, outdir: Path,
@@ -151,7 +151,7 @@ def get_mask_from_thumb(thumb, threshold: int) -> np.ndarray:
 def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, use_canny):
     tile = slide.read_region(coords, 0, (int(tile_size_px),)*2)
 
-    # True by default, which runs Canny edge detection
+    # True by default, which runs Canny edge detection & artefact detector
     if use_canny:
         # Below was added in version 0.2.0, using Canny as extra filtering method
         tile_to_greyscale = tile.convert('L')
@@ -176,8 +176,14 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
             logging.info(
                 f'Tile rejected, found 2 or less edges. Tile: {outpath}')
             return
-        # here is new bit, need to convert from PIL (RGB) to CV2 (BGR)
-        if run_artefact_detector(cv2.cvtColor(np.array(tile), cv2.COLOR_RGBA2BGR)) == -1:
+        
+        # here is new bit
+        weights = Artefact_detector.load_default_weights()
+        art_det = Artefact_detector.load_from_checkpoint(weights)
+        art_det.eval.cpu()
+        transform = art_det.default_transforms()
+        tformd_tile = transform(tile).unsqueeze(0)
+        if art_det(tformd_tile).detach().squeeze().numpy() < 0.5:
             logging.info(
                 f'Tile rejected by artefact detector. Tile: {outpath}')
             return
