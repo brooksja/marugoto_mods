@@ -184,7 +184,7 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
         art_det.eval().cpu()
         transform = art_det.default_transforms()
         tformd_tile = transform(tile.convert('RGB')).unsqueeze(0)
-        if art_det(tformd_tile).detach().squeeze().numpy() < 0.5:
+        if art_det.model(tformd_tile).detach().squeeze().numpy() < 0.5:
             logging.info(
                 f'Tile rejected by artefact detector. Tile: {outpath}')
             return
