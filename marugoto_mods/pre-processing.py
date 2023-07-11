@@ -181,7 +181,7 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
         art_det = Artefact_detector()
         weights = art_det.load_default_weights()
         art_det = Artefact_detector.load_from_checkpoint(weights)
-        art_det.eval.cpu()
+        art_det.eval().cpu()
         transform = art_det.default_transforms()
         tformd_tile = transform(tile).unsqueeze(0)
         if art_det(tformd_tile).detach().squeeze().numpy() < 0.5:
