@@ -36,7 +36,7 @@ def _top_att_tiles_df(
         slide_table=slide_csv,
         feature_dir=feature_dir,
         target_label=target_label,
-        categories=None,
+        categories=None, # changed this from [pos_class]
     )
     
     encoder = learn.encoder.eval()
@@ -51,7 +51,7 @@ def _top_att_tiles_df(
     # i_patients = np.repeat([np.arange(n_tiles)],n_patients,axis=0)
     i_patients = np.arange(n_patients)
     iter_df = df[df[target_label] == pos_class].copy()
-    iter_df["loss"] = pd.to_numeric(iter_df["loss"])
+    iter_df["loss"] = pd.to_numeric(iter_df["loss"]) # added this
     # Filter for patients with more than 50 slides only
     for i_patient, slide_paths in zip(
         i_patients, iter_df.nsmallest(n_patients, "loss")["slide_path"].values
