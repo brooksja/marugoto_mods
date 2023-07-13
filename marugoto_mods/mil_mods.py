@@ -1,3 +1,9 @@
+"""
+Changes from marugoto:
+- allow passing different learning rates and n_epochs
+- suppressed deprecation warning
+"""
+
 from datetime import datetime
 import json
 from pathlib import Path
@@ -53,6 +59,8 @@ def train(
         targets:  An (encoder, targets) pair.
         add_features:  An (encoder, targets) pair for each additional input.
         valid_idxs:  Indices of the datasets to use for validation.
+        n_epoch: Maximum number of epochs to train for.
+        lr: Learning rate to use while training.
     """
     target_enc, targs = targets
     train_ds = make_dataset(
@@ -125,12 +133,14 @@ def train_categorical_model_(
             clini table if none given (e.g. '["MSIH", "nonMSIH"]').
         feature_dir:  Path containing the features.
         output_path:  File to save model in.
+        lr: Learning rate to use during training.
+        n_epoch: Maximum number of epochs to train for.
     """
-    warn(
-        "this interface is deprecated and will be removed in the future.  "
-        "For training from the command line, please use `marugoto.mil.train`.",
-        FutureWarning,
-    )
+#    warn(
+#        "this interface is deprecated and will be removed in the future.  "
+#        "For training from the command line, please use `marugoto.mil.train`.",
+#        FutureWarning,
+#    )
     feature_dir = Path(feature_dir)
     output_path = Path(output_path)
     output_path.mkdir(exist_ok=True, parents=True)
@@ -236,7 +246,7 @@ def categorical_crossval_(
     fixed_folds: Optional[Path] = None,
     categories: Optional[Iterable[str]] = None,
     lr: float = 1e-4,
-    n_epochs: int = 32
+    n_epoch: int = 32
 ) -> None:
     """Performs a cross-validation for a categorical target.
 
@@ -250,6 +260,8 @@ def categorical_crossval_(
         fixed_folds: Path to the folds.pt splits you want to use
         categories:  Categories to train for, or all categories appearing in the
             clini table if none given (e.g. '["MSIH", "nonMSIH"]').
+        lr: Learning rate to use during training.
+        n_epoch: Maximum number of epochs to train for.
     """
     feature_dir = Path(feature_dir)
     output_path = Path(output_path)
@@ -351,7 +363,7 @@ def categorical_crossval_(
                 cat_labels=cat_labels,
                 cont_labels=cont_labels,
                 lr=lr,
-                n_epochs=n_epochs
+                n_epoch=n_epoch
             )
             learn.export()
 
@@ -370,7 +382,7 @@ def categorical_crossval_(
 
 
 def _crossval_train(
-    *, fold_path, fold_df, fold, info, target_label, target_enc, cat_labels, cont_labels, lr, n_epochs
+    *, fold_path, fold_df, fold, info, target_label, target_enc, cat_labels, cont_labels, lr, n_epoch
 ):
     """Helper function for training the folds."""
     assert fold_df.PATIENT.nunique() == len(fold_df)
@@ -412,7 +424,7 @@ def _crossval_train(
         valid_idxs=fold_df.PATIENT.isin(valid_patients),
         path=fold_path,
         lr=lr,
-        n_epoch=n_epochs
+        n_epoch=n_epoch
     )
     learn.target_label = target_label
     learn.cat_labels, learn.cont_labels = cat_labels, cont_labels
