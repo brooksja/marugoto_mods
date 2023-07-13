@@ -1,3 +1,11 @@
+"""
+Original at: https://github.com/KatherLab/highres-WSI-heatmaps.git
+
+Modifications:
+- canny edge detector added 
+- automatic download of RetCCL weights using gdown
+"""
+
 import argparse
 import io
 from pathlib import Path
@@ -186,7 +194,7 @@ def canny_detector(tile):
     edge = (((np.sum(np.sum(edge)) / (tile_grey.shape[0]*tile_grey.shape[1])) * 100)
             if (tile_grey.shape[0]*tile_grey.shape[1]) != 0 else 0)
 
-    # hardcoded limit. Less or equal to 5 edges will be rejected (i.e., not saved)
+    # hardcoded limit. Less or equal to 5 edges will be replaced with a blank tile
     if(edge <= 5):
         new = np.ones_like(np.array(tile),dtype=np.uint8)*250
         return PIL.Image.fromarray(new)
