@@ -7,4 +7,5 @@ Please reference their work if using this repo!
 
 NOTE: this is a work in progress - additional functionality may be added as I discover things I need!
 
-TODO: list modifications made in comments at start of each function
+## Usage
+TODO: describe usage ie cmd command & options, usage in python scripts and installation
