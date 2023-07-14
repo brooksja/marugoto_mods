@@ -65,7 +65,7 @@ def main(
     outdir.mkdir(exist_ok=True, parents=True)
     logging.basicConfig(filename=outdir/'logfile', level=logging.DEBUG)
     logging.getLogger().addHandler(logging.StreamHandler())
-    slides = sum((list(cohort_path.glob(f'**/*.{ext}'))
+    slides = sum((list(cohort_path.glob(f'**/**/*.{ext}'))
                   for ext in supported_extensions),
                  start=[])
 
