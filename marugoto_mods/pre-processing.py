@@ -36,9 +36,10 @@ from concurrent import futures
 from tqdm import tqdm
 from PIL import Image
 from typing import Tuple
+from common import supported_extensions
 import logging
 import cv2
-from artefact_detector.model import Artefact_detector
+
 
 def main(
         cohort_path: Path, outdir: Path,
@@ -77,6 +78,12 @@ def main(
             progress.set_description(slide_path.stem)
             tmp_slide_path = Path(tmpdir)/slide_path.name
             shutil.copy(slide_path, tmp_slide_path)
+            job = tmp_slide_path
+            if slide_path.suffix == '.mrxs':
+                original_data_folder = slide_path.parent/slide_path.stem
+                target_data_folder = tmp_slide_path.parent/tmp_slide_path.stem
+                shutil.copytree(original_data_folder, target_data_folder)
+                job = [tmp_slide_path, target_data_folder]
 
             future = executor.submit(
                 extract_tiles,
@@ -89,14 +96,19 @@ def main(
                 force=force,
                 canny=use_canny,
                 artefact_detector=art_det)
-            submitted_jobs[future] = tmp_slide_path     # to delete later
+            submitted_jobs[future] = job    # to delete later
 
             while len(submitted_jobs) > 2 or (submitted_jobs and i == len(slides) - 1):
                 done, _ = futures.wait(
                     submitted_jobs, return_when=futures.FIRST_COMPLETED)
                 for future in done:
                     # delete temporary slide copy
-                    submitted_jobs[future].unlink()
+                    if isinstance(submitted_jobs[future], list):
+                        for path in submitted_jobs[future]:
+                            if os.path.isdir(path):
+                                shutil.rmtree(path) # delete directory  and all its contents
+                            else:
+                                os.remove(path)
                     try:
                         future.result()     # force result to get eventual exceptions
                     except Exception as e:
@@ -143,12 +155,24 @@ def extract_tiles(
 
 
 def get_scaled_thumb(slide: OpenSlide, um_per_tile: float) -> Tuple[float, Image.Image]:
-    # TODO handle missing mpp
-    tile_size_px = um_per_tile/float(slide.properties[PROPERTY_NAME_MPP_X])
+    try:
+        tile_size_px = um_per_tile/float(slide.properties[PROPERTY_NAME_MPP_X])
+    except KeyError:
+        tile_size_px = handle_missing_mpp(slide, um_per_tile)
 
     thumb_size = (np.array(slide.dimensions)/tile_size_px).astype(int)
     return tile_size_px, slide.get_thumbnail(thumb_size)
 
+def handle_missing_mpp(slide: OpenSlide, um_per_tile: float) -> float:
+    logging.exception("Missing mpp in metadata of this file format, reading mpp from metadata")
+    import xml.dom.minidom as minidom
+    xml_path = slide.properties['tiff.ImageDescription']
+    doc = minidom.parseString(xml_path)
+    collection = doc.documentElement
+    images = collection.getElementsByTagName("Image")
+    pixels = images[0].getElementsByTagName("Pixels")
+    tile_size_px = um_per_tile / float(pixels[0].getAttribute("PhysicalSizeX"))
+    return tile_size_px
 
 def get_mask_from_thumb(thumb, threshold: int) -> np.ndarray:
     thumb = thumb.convert('L')
@@ -158,7 +182,7 @@ def get_mask_from_thumb(thumb, threshold: int) -> np.ndarray:
 def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, use_canny, artefact_detector):
     tile = slide.read_region(coords, 0, (int(tile_size_px),)*2)
 
-    # True by default, which runs Canny edge detection & artefact detector
+    # True by default, which runs Canny edge detection
     if use_canny:
         # Below was added in version 0.2.0, using Canny as extra filtering method
         tile_to_greyscale = tile.convert('L')
@@ -182,8 +206,7 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
         if(edge < 2.):
             logging.info(
                 f'Tile rejected, found 2 or less edges. Tile: {outpath}')
-            return
-        
+            return    
         # here is new bit
         
         transform = artefact_detector.default_transforms()
