@@ -38,7 +38,7 @@ from PIL import Image
 from typing import Tuple
 import logging
 import cv2
-
+from artefact_detector.model import Artefact_detector
 
 def main(
         cohort_path: Path, outdir: Path,
