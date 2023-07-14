@@ -36,7 +36,6 @@ from concurrent import futures
 from tqdm import tqdm
 from PIL import Image
 from typing import Tuple
-from common import supported_extensions
 import logging
 import cv2
 
