@@ -162,3 +162,4 @@ cython_debug/
 # Extras
 # do not upload RetCCL checkpoint as this is downloaded during use
 ./RetCCL/best_ckpt.pth
+test_results/
