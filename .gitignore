@@ -161,5 +161,5 @@ cython_debug/
 
 # Extras
 # do not upload RetCCL checkpoint as this is downloaded during use
-marugoto_mods/RetCCL/best_ckpt.pth
+/marugoto_mods/RetCCL/best_ckpt.pth
 test_results/
