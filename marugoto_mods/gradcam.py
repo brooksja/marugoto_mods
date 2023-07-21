@@ -89,13 +89,12 @@ def reshape_activation_map(activations: np.array,
     
     # create transparent "slide"
     map = np.zeros(thumb_dims).transpose()
-    
     # populate map with activation values based on coords
     for i in range(len(coords)):
         x_start = coords[i,1]
-        x_end = x_start + 224
+        x_end = x_start + 224//SF
         y_start = coords[i,0]
-        y_end = y_start + 224
+        y_end = y_start + 224//SF
         map[x_start:x_end,y_start:y_end] = activations[i]
     return map
 
@@ -131,17 +130,22 @@ def GCAM(model: Path,
     # put the feats through the model apart from the head (?)
     x = MIL_model.encoder(feats)
     x.retain_grad()
-    attention = MIL_model._masked_attention_scores(x,torch.tensor(len(x),device=device))
+    attention = MIL_model._masked_attention_scores(x,torch.tensor(x.shape[1],device=device))
     y = (attention*x).sum(-2)
     y = MIL_model.head(y)
 
     # do the backward propagation
-    y[0,0].backward()
+    y[0,1].backward()
     activations = (x*x.grad).squeeze().abs().sum(-1).detach().cpu()
+    att = (attention).squeeze().abs().detach().cpu()
     
     map = reshape_activation_map(np.array(activations),coords,slide_path,outpath)
+    att_map = reshape_activation_map(np.array(att),coords,slide_path,outpath)
 
-    plt.imshow(map,cmap='Reds')
+    plt.subplot(1,2,1)
+    plt.imshow(map,cmap='hot')
+    plt.subplot(1,2,2)
+    plt.imshow(att_map,cmap='hot')
     plt.show()
 
 # EOD 20/07/23: code works, no errors but output map is basically all 0's. Try with a model & WSI that produces a sensible heatmap?
