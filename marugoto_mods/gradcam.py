@@ -89,12 +89,13 @@ def reshape_activation_map(activations: np.array,
     
     # create transparent "slide"
     map = np.zeros(thumb_dims).transpose()
+
     # populate map with activation values based on coords
     for i in range(len(coords)):
         x_start = coords[i,1]
-        x_end = x_start + 224//SF
+        x_end = x_start + int(256/(16*float(slide.properties[openslide.PROPERTY_NAME_MPP_X])))
         y_start = coords[i,0]
-        y_end = y_start + 224//SF
+        y_end = y_start + int(256/(16*float(slide.properties[openslide.PROPERTY_NAME_MPP_X])))
         map[x_start:x_end,y_start:y_end] = activations[i]
     return map
 
@@ -131,27 +132,27 @@ def GCAM(model: Path,
     x = MIL_model.encoder(feats)
     x.retain_grad()
     attention = MIL_model._masked_attention_scores(x,torch.tensor(x.shape[1],device=device))
-    y = (attention*x).sum(-2)
-    y = MIL_model.head(y)
+    x2 = (attention*x)
+    x2.retain_grad()
+    y = MIL_model.head(x2.sum(-2))
 
     # do the backward propagation
     y[0,1].backward()
-    activations = (x*x.grad).squeeze().abs().sum(-1).detach().cpu()
-    att = (attention).squeeze().abs().detach().cpu()
-    
+    activations = nn.functional.relu(x*x.grad).squeeze().sum(-1).detach().cpu()
+    act2 = nn.functional.relu(x2*x2.grad).squeeze().sum(-1).detach().cpu()
     map = reshape_activation_map(np.array(activations),coords,slide_path,outpath)
-    att_map = reshape_activation_map(np.array(att),coords,slide_path,outpath)
+    att_map = reshape_activation_map(np.array(act2),coords,slide_path,outpath)
 
     plt.subplot(1,2,1)
-    plt.imshow(map,cmap='hot')
+    plt.imshow(map,cmap='plasma')
     plt.subplot(1,2,2)
-    plt.imshow(att_map,cmap='hot')
+    plt.imshow(att_map,cmap='plasma')
     plt.show()
 
-# EOD 20/07/23: code works, no errors but output map is basically all 0's. Try with a model & WSI that produces a sensible heatmap?
+# EOD 21/07/23: code works, no errors but output map is minimal - issue?. Try with a model & WSI that produces a sensible heatmap?
 
-GCAM('/home/james/Documents/Hoshida_prediction/results/train/HOSHIDA=S3/Run_0/export.pkl',
-     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/imgs/B239.mrxs',
+GCAM('/home/james/Documents/Hoshida_prediction/results/train/HOSHIDA/Run_2/export.pkl',
+     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/imgs/NY18-19.mrxs',
      '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/clean_aug_feats/',
      '/home/james/Documents/marugoto_mods/test_results'
      )
