@@ -78,11 +78,11 @@ def main(
             tmp_slide_path = Path(tmpdir)/slide_path.name
             shutil.copy(slide_path, tmp_slide_path)
             job = tmp_slide_path
-            if slide_path.suffix == '.mrxs':
-                original_data_folder = slide_path.parent/slide_path.stem
-                target_data_folder = tmp_slide_path.parent/tmp_slide_path.stem
-                shutil.copytree(original_data_folder, target_data_folder)
-                job = [tmp_slide_path, target_data_folder]
+#            if slide_path.suffix == '.mrxs':
+#                original_data_folder = slide_path.parent/slide_path.stem
+#                target_data_folder = tmp_slide_path.parent/tmp_slide_path.stem
+#                shutil.copytree(original_data_folder, target_data_folder)
+#                job = [tmp_slide_path, target_data_folder]
 
             future = executor.submit(
                 extract_tiles,
