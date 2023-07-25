@@ -39,9 +39,9 @@ The other files should be run from the command line as follows.
 ```
 python -m marugoto_mods.pre-processing \
     --outdir PATH/TO/SAVE/TILES/TO \
-    --tile_size INT \
-    --um_per_tile FLOAT \
-    --brightness_cutoff INT \
+    --tile-size INT \
+    --um-per-tile FLOAT \
+    --brightness-cutoff INT \
     PATH/TO/WSIs
 ```
   Defaults are:
