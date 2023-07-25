@@ -78,11 +78,11 @@ def main(
             tmp_slide_path = Path(tmpdir)/slide_path.name
             shutil.copy(slide_path, tmp_slide_path)
             job = tmp_slide_path
-#            if slide_path.suffix == '.mrxs':
-#                original_data_folder = slide_path.parent/slide_path.stem
-#                target_data_folder = tmp_slide_path.parent/tmp_slide_path.stem
-#                shutil.copytree(original_data_folder, target_data_folder)
-#                job = [tmp_slide_path, target_data_folder]
+            if slide_path.suffix == '.mrxs':
+                original_data_folder = slide_path.parent/slide_path.stem
+                target_data_folder = tmp_slide_path.parent/tmp_slide_path.stem
+                shutil.copytree(original_data_folder, target_data_folder)
+                job = [tmp_slide_path, target_data_folder]
 
             future = executor.submit(
                 extract_tiles,
@@ -94,7 +94,7 @@ def main(
                 threshold=brightness_cutoff,
                 force=force,
                 canny=use_canny,
-                artefact_detector=art_det)
+                artefact_detector=None if slide_path.suffix=='.mrxs' else art_det)
             submitted_jobs[future] = job    # to delete later
 
             while len(submitted_jobs) > 2 or (submitted_jobs and i == len(slides) - 1):
@@ -208,12 +208,13 @@ def read_and_save_tile(*, slide, outpath, coords, tile_size_px, tile_size_out, u
             return    
         # here is new bit
         
-        transform = artefact_detector.default_transforms()
-        tformd_tile = transform(tile.convert('RGB')).unsqueeze(0)
-        if artefact_detector.model(tformd_tile).detach().squeeze().numpy() < 0.5:
-            logging.info(
-                f'Tile rejected by artefact detector. Tile: {outpath}')
-            return
+        if artefact_detector:
+            transform = artefact_detector.default_transforms()
+            tformd_tile = transform(tile.convert('RGB')).unsqueeze(0)
+            if artefact_detector.model(tformd_tile).detach().squeeze().numpy() < 0.5:
+                logging.info(
+                    f'Tile rejected by artefact detector. Tile: {outpath}')
+                return
 
     tile = tile.convert('RGB').resize((tile_size_out,)*2)
     tile.save(outpath)

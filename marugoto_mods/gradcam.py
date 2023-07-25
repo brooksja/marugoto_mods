@@ -152,7 +152,7 @@ def GCAM(model: Path,
 # EOD 21/07/23: code works, no errors but output map is minimal - issue?. Try with a model & WSI that produces a sensible heatmap?
 
 GCAM('/home/james/Documents/Hoshida_prediction/results/train/HOSHIDA/Run_2/export.pkl',
-     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/imgs/NY18-19.mrxs',
+     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/imgs/M435.mrxs',
      '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/clean_aug_feats/',
      '/home/james/Documents/marugoto_mods/test_results'
      )
