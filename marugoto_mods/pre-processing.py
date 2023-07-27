@@ -108,6 +108,8 @@ def main(
                                 shutil.rmtree(path) # delete directory  and all its contents
                             else:
                                 os.remove(path)
+                    else:
+                        submitted_jobs[future].unlink()
                     try:
                         future.result()     # force result to get eventual exceptions
                     except Exception as e:
