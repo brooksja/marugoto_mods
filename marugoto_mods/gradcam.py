@@ -29,9 +29,9 @@ def load_model(model:str):
     if model == 'RetCCL':
         base_model = ResNet.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear=True)
         url = 'https://drive.google.com/drive/folders/1AhstAFVqtTqxeS9WlBpU41BV08LYFUnL'
-        destination = './RetCCL'
+        destination = os.path.join(os.getcwd(),'RetCCL')
         gdown.download_folder(url=url,output=destination,quiet=True)
-        pretext_model = torch.load("./RetCCL/best_ckpt.pth")#, map_location=device)
+        pretext_model = torch.load(os.path.join(destination,"best_ckpt.pth"))
         base_model.fc = nn.Identity()
         base_model.load_state_dict(pretext_model, strict=True)
         # group the layers for ease
