@@ -12,10 +12,23 @@ import numpy as np
 import PIL.Image as Image
 import torchvision.transforms as T
 import openslide
+import argparse
 
 from .RetCCL import ResNet
 import torch.nn as nn
 import gdown
+
+if __name__ == "__main__":
+    # define argparser for cmd use
+    parser = argparse.ArgumentParser(
+        prog='GradCAM',
+        description='script to implement GradCAM for a given model and WSI'
+    )
+    parser.add_argument('model',help='path to MIL model .pkl folder')
+    parser.add_argument('slide_path',help='path to slide')
+    parser.add_argument('feat_dir',help='path to feature directory')
+    parser.add_argument('outpath',help='path for saving outputs')
+    args = parser.parse_args()
 
 def load_model(model:str):
     """
@@ -249,3 +262,11 @@ def GCAM(model: Path,
         j +=1
     plt.savefig(os.path.join(outpath,'tile-level-gradcam.jpg'))
     print('Complete')
+
+if __name__ == "__main__":
+    GCAM(
+        model=args.model,
+        slide_path=args.slide_path,
+        feat_dir=args.feat_dir,
+        outpath=args.outpath
+    )
