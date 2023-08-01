@@ -30,6 +30,22 @@ train_categorical_model_mod(
 
 Further information can be found in the original repo: https://github.com/KatherLab/marugoto.git
 
+### gradcam
+This python file contains the functions required to apply the gradcam technique to 1 the features for a WSI and 2 the top tiles within said tile. The GCAM function saves 3 images (a thumbnail of the slide, slide-level gradcam result and tile-level gradcam result) to the specified outdir.
+
+It is designed to be used within a python script and can be used as follows:
+
+'''Python
+from marugoto_mods.gradcam import GCAM
+
+GCAM(
+  model = PATH/TO/MARUGOTO_MODEL/EXPORT.PKL,
+  slide_path = PATH/TO/SLIDE,
+  feat_dir = PATH/TO/FEATURE/DIRECTORY,
+  outdir = PATH/TO/OUTPUT/IMGS/TO
+)
+'''
+
 The other files should be run from the command line as follows.
 ### pre-processing
 1. Move to the marugoto_mods folder.
