@@ -42,7 +42,7 @@ GCAM(
   model = PATH/TO/MARUGOTO_MODEL/EXPORT.PKL,
   slide_path = PATH/TO/SLIDE,
   feat_dir = PATH/TO/FEATURE/DIRECTORY,
-  outdir = PATH/TO/OUTPUT/IMGS/TO
+  outpath = PATH/TO/OUTPUT/IMGS/TO
 )
 ```
 
