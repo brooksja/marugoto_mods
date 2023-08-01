@@ -28,7 +28,7 @@ def load_model(model:str):
     # if model is RetCCL, load it and weights
     if model == 'RetCCL':
         base_model = ResNet.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear=True)
-        url = 'https://drive.google.com/drive/folders/1AhstAFVqtTqxeS9WlBpU41BV08LYFUnL'
+        url = "https://drive.google.com/drive/folders/1AhstAFVqtTqxeS9WlBpU41BV08LYFUnL"
         destination = os.path.join(os.getcwd(),'RetCCL')
         gdown.download_folder(url=url,output=destination,quiet=True)
         pretext_model = torch.load(os.path.join(destination,"best_ckpt.pth"))
