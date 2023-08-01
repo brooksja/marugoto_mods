@@ -12,7 +12,10 @@ import numpy as np
 import PIL.Image as Image
 import torchvision.transforms as T
 import openslide
+import sys
 
+if (p := "./RetCCL") not in sys.path:
+    sys.path = [p] + sys.path
 from RetCCL.ResNet import resnet50
 import torch.nn as nn
 import gdown
