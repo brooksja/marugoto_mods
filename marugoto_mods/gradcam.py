@@ -18,6 +18,13 @@ import torch.nn as nn
 import gdown
 
 def load_model(model:str):
+    """
+    this function takes in a string describing the model and then loads said model. If model is a path to a marugoto export.pkl, it loads that. If model is 'RetCCL' it loads that and downloads the weights.
+    inputs:
+        model - 'RetCCL' or path to export.pkl
+    returns:
+        base_model - the loaded model in eval mode
+    """
     # if model is RetCCL, load it and weights
     if model == 'RetCCL':
         base_model = resnet50(num_classes=128, mlp=False, two_branch=False, normlinear=True)
@@ -27,9 +34,11 @@ def load_model(model:str):
         pretext_model = torch.load("./RetCCL/best_ckpt.pth")#, map_location=device)
         base_model.fc = nn.Identity()
         base_model.load_state_dict(pretext_model, strict=True)
-        base_model.prep = [base_model.conv1,base_model.bn1,base_model.relu,base_model.maxpool]
-        base_model.layers = [base_model.layer1,base_model.layer2,base_model.layer3,base_model.layer4]
-        base_model.head = [base_model.avgpool,base_model.flatten,base_model.fc]
+        # group the layers for ease
+        base_model.prep = nn.Sequential(base_model.conv1,base_model.bn1,base_model.relu,base_model.maxpool)
+        base_model.layers = nn.Sequential(base_model.layer1,base_model.layer2,base_model.layer3,base_model.layer4)
+        base_model.head = nn.Sequential(base_model.avgpool,base_model.flatten,base_model.fc)
+    # if model is a pth to an export.pkl, load the fastai learner stored there and get the model out
     elif model.endswith('.pkl'):
         learn = load_learner(model)
         base_model = learn.model
@@ -90,7 +99,7 @@ def reshape_activation_map(activations: np.array,
     # create transparent "slide"
     map = np.zeros(thumb_dims).transpose()
 
-    # populate map with activation values based on coords
+    # populate map with activation values based on coords TODO: allow different magnifications/tile dims
     for i in range(len(coords)):
         x_start = coords[i,1]
         x_end = x_start + int(256/(16*float(slide.properties[openslide.PROPERTY_NAME_MPP_X])))
@@ -99,6 +108,66 @@ def reshape_activation_map(activations: np.array,
         map[x_start:x_end,y_start:y_end] = activations[i]
     return map
 
+def get_tile(slide_path:Path,
+             coords:tuple):
+    """
+    function to open the WSI and get the tile from the specified coords. TODO: generalise to different size tiles
+    inputs:
+        slide_path - path to WSI being analysed
+        coords - coordinates of the desired tile
+    returns:
+        tile - the tile at the specified coordinates in RGB format and resized to fit ResNet
+    """
+    slide = openslide.OpenSlide(slide_path)
+    tile = slide.read_region(coords,0,(256,256))
+    print('Tile loaded')
+    return tile.convert('RGB').resize((224,224))
+
+def gcam_tile(tile,
+              MIL_model,
+              extractor):
+    """
+    function to load a tile, put it through feature extraction & marugoto, then back propagate to find important parts on the tile
+    inputs:
+        tile - tile to be analysed
+        MIL_model - MIL model used in earlier steps
+        extractor - feature extractor used to generate feats TODO: allow other extractors?
+    returns:
+        activations - activations from the last convolutional layer of the feature extractor TODO: generalise to other layers?
+    """
+    # run on gpu if available
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # make sure all models on the same device
+    MIL_model.to(device)
+    extractor.to(device)
+
+    # pre-process tile
+    Tforms = T.Compose([
+        T.Resize(224),
+        T.CenterCrop(224),
+        T.ToTensor(),
+        T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    ])
+    tile = Tforms(tile).unsqueeze(0).to(device)
+    tile.requires_grad = True
+
+    # put tile through ResNet
+    x = extractor.prep(tile)
+    x = extractor.layers(x)
+    x.retain_grad()
+    z = extractor.head(x)
+
+    # put features through MIL_model
+    z = MIL_model.encoder(z)
+    attention = MIL_model._masked_attention_scores(z,torch.tensor(z.shape[1],device=device))
+    z = (attention*z).sum(-2)
+    y = MIL_model.head(z)
+
+    # do back propagation
+    y[0,1].backward()
+    activations = nn.functional.relu(x*x.grad).squeeze().sum(0).detach().cpu()
+    return activations
 
 def GCAM(model: Path,
          slide_path: Path,
@@ -112,8 +181,9 @@ def GCAM(model: Path,
         slide_path - path to the slide
         feat_dir - path to the directory containing feature h5 files
         outpath - path for saving outputs
-    returns:
-
+    outputs:
+        slide-level-gradcam.jpg - activation map at the slide level
+        tile-level-gradcam.jpg - activation maps at the tile level for top 5 tiles TODO: generalise to n tiles?
     """
     # run on gpu if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -143,16 +213,36 @@ def GCAM(model: Path,
     map = reshape_activation_map(np.array(activations),coords,slide_path,outpath)
     att_map = reshape_activation_map(np.array(act2),coords,slide_path,outpath)
 
+    plt.figure()
     plt.subplot(1,2,1)
+    plt.title('Feats')
     plt.imshow(map,cmap='plasma')
     plt.subplot(1,2,2)
+    plt.title('Attention-weighted')
     plt.imshow(att_map,cmap='plasma')
-    plt.show()
+    plt.savefig(os.path.join(outpath,'slide-level-gradcam.jpg'))
+    print('Slide-level GradCAM complete, starting tile-level...')
 
-# EOD 21/07/23: code works, no errors but output map is minimal - issue?. Try with a model & WSI that produces a sensible heatmap?
+    # get top tiles
+    n_tiles = 5
+    plt.figure()
+    idxs = np.argsort(np.array(activations))[::-1][:n_tiles]
+    j = 1
+    # load RetCCL Resnet model
+    extractor = load_model('RetCCL').to(device)
+    for idx in idxs:
+        tile_coords = coords[idx]
+        tile = get_tile(slide_path,tile_coords)
 
-GCAM('/home/james/Documents/Hoshida_prediction/results/train/HOSHIDA/Run_2/export.pkl',
-     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/imgs/M435.mrxs',
-     '/mnt/JD/LIVER/LLOVET-LIVER-HCC/Resections/clean_aug_feats/',
-     '/home/james/Documents/marugoto_mods/test_results'
-     )
+        # run the tile through the next step
+        activations = gcam_tile(tile,MIL_model,extractor)
+        
+        plt.subplot(2,n_tiles,j)
+        plt.title('Tile')
+        plt.imshow(tile)
+        plt.subplot(2,n_tiles,j+n_tiles)
+        plt.title('Activations')
+        plt.imshow(activations,cmap='plasma')
+        j +=1
+    plt.savefig(os.path.join(outpath,'tile-level-gradcam.jpg'))
+    print('Complete')
