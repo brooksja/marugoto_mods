@@ -185,6 +185,9 @@ def GCAM(model: Path,
         slide-level-gradcam.jpg - activation map at the slide level
         tile-level-gradcam.jpg - activation maps at the tile level for top 5 tiles TODO: generalise to n tiles?
     """
+    # create outpath if it does not already exist
+    os.makedirs(outpath,exist_ok=True)
+             
     # run on gpu if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
