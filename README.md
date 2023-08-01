@@ -35,7 +35,7 @@ This python file contains the functions required to apply the gradcam technique 
 
 It is designed to be used within a python script and can be used as follows:
 
-'''Python
+```Python
 from marugoto_mods.gradcam import GCAM
 
 GCAM(
@@ -44,7 +44,7 @@ GCAM(
   feat_dir = PATH/TO/FEATURE/DIRECTORY,
   outdir = PATH/TO/OUTPUT/IMGS/TO
 )
-'''
+```
 
 The other files should be run from the command line as follows.
 ### pre-processing
