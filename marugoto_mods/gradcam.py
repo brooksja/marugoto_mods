@@ -24,10 +24,10 @@ if __name__ == "__main__":
         prog='GradCAM',
         description='script to implement GradCAM for a given model and WSI'
     )
-    parser.add_argument('model',help='path to MIL model .pkl folder')
-    parser.add_argument('slide_path',help='path to slide')
-    parser.add_argument('feat_dir',help='path to feature directory')
-    parser.add_argument('outpath',help='path for saving outputs')
+    parser.add_argument('--model',help='path to MIL model .pkl folder',required=True)
+    parser.add_argument('--slide_path',help='path to slide',required=True)
+    parser.add_argument('--feat_dir',help='path to feature directory',required=True)
+    parser.add_argument('--outpath',help='path for saving outputs',required=True)
     args = parser.parse_args()
 
 def load_model(model:str):
