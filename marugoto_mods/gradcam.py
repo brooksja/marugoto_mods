@@ -16,7 +16,7 @@ import sys
 
 if (p := "./RetCCL") not in sys.path:
     sys.path = [p] + sys.path
-from RetCCL.ResNet import resnet50
+from RetCCL import ResNet
 import torch.nn as nn
 import gdown
 
@@ -30,7 +30,7 @@ def load_model(model:str):
     """
     # if model is RetCCL, load it and weights
     if model == 'RetCCL':
-        base_model = resnet50(num_classes=128, mlp=False, two_branch=False, normlinear=True)
+        base_model = ResNet.resnet50(num_classes=128, mlp=False, two_branch=False, normlinear=True)
         url = 'https://drive.google.com/drive/folders/1AhstAFVqtTqxeS9WlBpU41BV08LYFUnL'
         destination = './RetCCL'
         gdown.download_folder(url=url,output=destination,quiet=True)
