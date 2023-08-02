@@ -101,24 +101,22 @@ def reshape_activation_map(activations: np.array,
     WSI_dims = slide.dimensions # dimensions of the slide at level 0 (used for extraction)
     thumb_dims = slide.level_dimensions[slide.get_best_level_for_downsample(16)] # dimensions at thumbnail magnification
     # create and save thumbnail image
-    thumb = slide.get_thumbnail(thumb_dims).save(os.path.join(outpath,'slide_thumb.jpg'))
+    thumb_path = os.path.join(outpath,'slide_thumb.jpg')
+    if not os.path.exists(thumb_path):
+        slide.get_thumbnail(thumb_dims).save(thumb_path)
 
-    # create scale factor for converting between WSI_dims and thumb_dims
-    SF = 16 # set by slide.get_best_level_for_downsample(16) above
-    
-    # convert coords from WSI to thumb scale
-    coords = coords//SF
-    
+    # WSI size in tiles
+    n_tiles = [int((dim*float(slide.properties[openslide.PROPERTY_NAME_MPP_X]))/256) for dim in WSI_dims]
+
     # create transparent "slide"
-    map = np.zeros(thumb_dims).transpose()
+    map = np.zeros(tuple(n_tiles)).transpose()
 
     # populate map with activation values based on coords TODO: allow different magnifications/tile dims
     for i in range(len(coords)):
-        x_start = coords[i,1]
-        x_end = x_start + int(256/(16*float(slide.properties[openslide.PROPERTY_NAME_MPP_X])))
-        y_start = coords[i,0]
-        y_end = y_start + int(256/(16*float(slide.properties[openslide.PROPERTY_NAME_MPP_X])))
-        map[x_start:x_end,y_start:y_end] = activations[i]
+        # convert coords from WSI to tile number
+        x = int((coords[i,1]/WSI_dims[0])*n_tiles[0])
+        y = int((coords[i,0]/WSI_dims[1])*n_tiles[1])
+        map[x,y] = activations[i]
     return map
 
 def get_tile(slide_path:Path,
@@ -233,9 +231,11 @@ def GCAM(model: Path,
     plt.subplot(1,2,1)
     plt.title('Feats')
     plt.imshow(map,cmap='plasma')
+    plt.tick_params(left = False, right = False, labelleft = False, labelbottom = False, bottom = False)
     plt.subplot(1,2,2)
     plt.title('Attention-weighted')
     plt.imshow(att_map,cmap='plasma')
+    plt.tick_params(left = False, right = False, labelleft = False, labelbottom = False, bottom = False)
     plt.savefig(os.path.join(outpath,'slide-level-gradcam.jpg'))
     print('Slide-level GradCAM complete, starting tile-level...')
 
@@ -256,9 +256,11 @@ def GCAM(model: Path,
         plt.subplot(2,n_tiles,j)
         plt.title('Tile')
         plt.imshow(tile)
+        plt.tick_params(left = False, right = False, labelleft = False, labelbottom = False, bottom = False)
         plt.subplot(2,n_tiles,j+n_tiles)
         plt.title('Activations')
         plt.imshow(activations,cmap='plasma')
+        plt.tick_params(left = False, right = False, labelleft = False, labelbottom = False, bottom = False)
         j +=1
     plt.savefig(os.path.join(outpath,'tile-level-gradcam.jpg'))
     print('Complete')
