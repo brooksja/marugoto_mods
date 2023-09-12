@@ -38,7 +38,7 @@ from PIL import Image
 from typing import Tuple
 import logging
 import cv2
-from artefact_detector.model import Artefact_detector
+#from artefact_detector.model import Artefact_detector
 
 def main(
         cohort_path: Path, outdir: Path,
@@ -56,12 +56,13 @@ def main(
     """
     supported_extensions = {'svs', 'tif', 'vms', 'vmu', 'ndpi', 'scn', 'mrxs', 'tiff', 'svslide', 'bif'}
 
+    """
     # load artefact_detector
     art_det = Artefact_detector()
     weights = art_det.load_default_weights()
     art_det = Artefact_detector.load_from_checkpoint(weights)
     art_det.eval().cpu()
-    
+    """    
     outdir.mkdir(exist_ok=True, parents=True)
     logging.basicConfig(filename=outdir/'logfile', level=logging.DEBUG)
     logging.getLogger().addHandler(logging.StreamHandler())
@@ -94,7 +95,8 @@ def main(
                 threshold=brightness_cutoff,
                 force=force,
                 canny=use_canny,
-                artefact_detector=None if slide_path.suffix=='.mrxs' else art_det)
+                artefact_detector=None# if slide_path.suffix=='.mrxs' else art_det
+            )
             submitted_jobs[future] = job    # to delete later
 
             while len(submitted_jobs) > 2 or (submitted_jobs and i == len(slides) - 1):
