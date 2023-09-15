@@ -18,7 +18,7 @@ These two are designed to be imported into another python script. For example:
 ```Python
 from marugoto_mods.mil_mods import train_categorical_model_
 
-train_categorical_model_mod(
+train_categorical_model_(
         clini_table = clini,
         slide_csv = slide,
         feature_dir = feat_dir,
