@@ -41,6 +41,9 @@ from marugoto.data import SKLearnEncoder
 from marugoto.mil.model import MILModel
 from marugoto.mil.helpers import _make_cat_enc, _make_cont_enc
 
+from fire import Fire
+if __name__=='__main__':
+    Fire({'crossval':categorical_crossval_})
 
 def train(
     *,
