@@ -42,8 +42,6 @@ from marugoto.mil.model import MILModel
 from marugoto.mil.helpers import _make_cat_enc, _make_cont_enc
 
 from fire import Fire
-if __name__=='__main__':
-    Fire({'crossval':categorical_crossval_})
 
 def train(
     *,
@@ -433,3 +431,6 @@ def _crossval_train(
     learn.cat_labels, learn.cont_labels = cat_labels, cont_labels
 
     return learn
+
+if __name__=='__main__':
+    Fire({'crossval':categorical_crossval_})
